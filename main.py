@@ -22,6 +22,7 @@ df = df[df['ca'] != '?']
 # convert thal and ca to float
 df['thal'] = df['thal'].astype('float64')
 df['ca'] = df['ca'].astype('float64')
+df['num'] = df['num'].apply(lambda x: 0 if x == 0 else 1)
 
 columns = list(df.columns[:-1])
 
