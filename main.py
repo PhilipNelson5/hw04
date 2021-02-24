@@ -76,6 +76,7 @@ resultdf = pd.read_csv('data/AllCombinations.csv')
 
 #%%
 best_accuracy = resultdf.sort_values('accuracy').iloc[-1]['accuracy']
+display(resultdf.sort_values('accuracy', ascending=False).head(15))
 display(resultdf[resultdf['accuracy'] == best_accuracy])
 
 #%%
