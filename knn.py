@@ -72,7 +72,7 @@ def validate(classifier, test):
         test ([([float], float)]): list of known (vector, label) tuples
 
     Returns:
-        (float, float): classifier accuracy and f1 score
+        (float, float, float, float): classifier accuracy, precision, recall, and f1 score
     """
     tp = 0
     fp = 0
@@ -91,4 +91,7 @@ def validate(classifier, test):
             else: # positive
                 fp += 1
                 
-    return accuracy(tp, fp, fn, tn), f1(tp, fp, fn)
+    return accuracy(tp, fp, fn, tn), \
+        precision(tp, fp, fn),       \
+        recall(tp, fp, fn),          \
+        f1(tp, fp, fn)
