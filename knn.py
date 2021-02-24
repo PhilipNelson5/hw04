@@ -1,5 +1,6 @@
 import numpy as np
 from collections import Counter
+from sklearn.metrics import precision_recall_fscore_support
 
 """function used to calculate the euclidean distance of two vectors"""
 distance = lambda a, b: np.linalg.norm(a-b)
@@ -30,11 +31,11 @@ def classify(k, points, unknown):
 
     Args:
         k (int): k
-        points ([([float], float)]): list of known (vector, label) tuples
+        points ([([float], int)]): list of known (vector, label) tuples
         unknown ([float]): unknown vector to classify
 
     Returns:
-        [float]: classification
+        [int]: classification
     """
 
     dist_to_unknown = sorted(
@@ -46,23 +47,6 @@ def classify(k, points, unknown):
     
     return majority_vote(k_nearest_labels)
 
-def accuracy(tp, fp, fn, tn):
-    correct = tp + tn
-    total = tp + fp + fn + tn
-    return correct / total
-
-def precision(tp, fp, fn):
-    return tp / (tp + fp)
-
-def recall(tp, fp, fn):
-    return tp / (tp + fn)
-
-def f1(tp, fp, fn):
-    # p = precision(tp, fn, tp)
-    # r = recall(tp, tp, fn)
-    # return 2 * p * r / (p + r)
-    return tp / (tp + (fp + fn) / 2)
-
 def validate(classifier, test):
     """validate a classifier
 
@@ -72,26 +56,13 @@ def validate(classifier, test):
         test ([([float], float)]): list of known (vector, label) tuples
 
     Returns:
-        (float, float, float, float): classifier accuracy, precision, recall, and f1 score
+        (float, float, float, float): classifier precision, recall, f1 score, and support
     """
-    tp = 0
-    fp = 0
-    fn = 0
-    tn = 0
+    predictions = []
+    labels = []
     for unknown, label in test:
-        prediction = classifier(unknown)
-        if prediction == label: # true
-            if prediction == 0: # negative
-                tn += 1
-            else: # positive
-                tp += 1
-        else: # false
-            if prediction == 0: # negative
-                fn += 1
-            else: # positive
-                fp += 1
+        labels.append(label)
+        predictions.append(classifier(unknown))
                 
-    return accuracy(tp, fp, fn, tn), \
-        precision(tp, fp, fn),       \
-        recall(tp, fp, fn),          \
-        f1(tp, fp, fn)
+    p, r, f1, s = precision_recall_fscore_support(labels, predictions, labels=[1])
+    return p[0], r[0], f1[0], s[0]
