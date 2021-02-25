@@ -51,7 +51,7 @@ for i, cols in enumerate(combos):
     start = time.time()
     for k in range(1, 23, 2):
         precision, recall, f1, support = \
-            k_fold_validaiton(10, k, X, y)
+            k_fold_validation(10, k, X, y)
         results.append((name, k, precision, recall, f1, support))
         if (f1 > best_f1):
             best_f1 = f1
@@ -88,7 +88,7 @@ k = 11 # choose odd k so there is never a tie
 X = np.array([row.to_numpy() for index, row in df[cols].iterrows()])
 y = df['disease'].to_numpy() 
 
-precision, recall, f1, support = test_columns(df, cols, 'disease', k, k_fold_validaiton)
+precision, recall, f1, support = test_columns(df, cols, 'disease', k, k_fold_validation)
 
 print('precision  recall    f1        support')
 print('%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
