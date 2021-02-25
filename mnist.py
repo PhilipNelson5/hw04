@@ -15,29 +15,6 @@ from sklearn.datasets import fetch_openml
 mnist = fetch_openml('mnist_784', as_frame=False, cache=True)
 X = mnist.data
 y = np.vectorize(int)(mnist.target)
-# X = np.array([row.to_numpy() for _, row in mnist.data.iterrows()])
-# y = mnist.target.to_numpy()
-
-#%%
-print(len(X))
-print(len(X[0]))
-
-#%% concurrent
-import concurrent.futures
-from functools import partial
-
-def run(X, Y, k):
-  return k_fold_validation(10, k, X, y, lables=list(range(0,10)))
-
-print('k  precision  recall    f1        support')
-results = []
-with concurrent.futures.ProcessPoolExecutor() as executor:
-  for precision, recall, f1, support in zip(list(range(1,100,2)), executor.map(partial(run, X, y), list(range(1,100,2)))):
-    results.append((k, precision, recall, f1, support))
-    print(k, '%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
-
-resultdf = pd.DataFrame(results, columns=['k', 'precision', 'recall', 'f1', 'support'])
-resultdf.to_csv('data/MnistResults.csv', index=False)
 
 #%%
 k = 11 # choose odd k so there is never a tie
@@ -49,8 +26,8 @@ for k in range(1, 100, 2):
   results.append((k, precision, recall, f1, support))
   print(k, '%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
 
-resultdf = pd.DataFrame(results, columns=['k', 'precision', 'recall', 'f1', 'support'])
-resultdf.to_csv('data/MnistResults.csv', index=False)
+df = pd.DataFrame(results, columns=['k', 'precision', 'recall', 'f1', 'support'])
+df.to_csv('data/MnistResults.csv', index=False)
 
 #%%
 df = pd.read_csv('data/MnistResults.csv')
