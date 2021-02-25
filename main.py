@@ -1,4 +1,6 @@
 #%% imports
+from knn_sklearn import *
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -7,10 +9,6 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from functools import partial
 from itertools import combinations
-from sklearn.model_selection import KFold
-from sklearn.neighbors import NearestNeighbors
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_recall_fscore_support
 
 #%% load data
 df = pd.read_csv('data/cleveland.csv')
@@ -32,90 +30,7 @@ columns = [
     'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
 # print(df_val.dtypes)
 
-#%% functions
-def validate(classify, X_test, y_test):
-    """validate a classifier
-
-    Args:
-        classify (function(list(float))): classifier that accepts
-            a list of vectors and returns a list of labels
-        X_test (list(list(float))): list of known vectors
-        y_test (list(float)): list of known labels
-    """
-    y_predictions = classify(X_test)
-    p, r, f1, s = precision_recall_fscore_support(y_test, y_predictions, labels=[1])
-    return p[0], r[0], f1[0], s[0]
-
-def build_classifier(k, X_train, y_train):
-    """build a k nearest neighbors classifier
-
-    Args:
-        k ([int]): number of neighbors
-        X_train (list(list(float))): list of known vectors
-        y_train (list(float)): list of known labels
-
-    Returns:
-        function(list(list(float))) -> list(float): a knn classifier which
-            classifies a list of vecors
-    """
-    fit = NearestNeighbors(n_neighbors=k, metric='euclidean', algorithm='auto') \
-        .fit(X_train)
-
-    def classify(X_test):
-        _, indices = fit.kneighbors(X_test)
-        return [ np.bincount(y_train[ids]).argmax() for ids in indices ]
-
-    return classify
-
-
-def k_fold_validaiton(k_fold, k, X, y):
-    precision_t = 0
-    recall_t = 0
-    f1_t = 0
-    support_t = 0
-
-    for train_ind, test_ind in KFold(k_fold, True).split(X, y):
-        X_train = X[train_ind]
-        X_test = X[test_ind]
-        y_train = y[train_ind]
-        y_test = y[test_ind]
-
-        classify = build_classifier(k, X_train, y_train)
-        precision, recall, f1, support = validate(classify, X_test, y_test)
-
-        precision_t += precision
-        recall_t += recall
-        f1_t += f1
-        support_t += support
-
-    return precision_t/k_fold, recall_t/k_fold, f1_t/k_fold, support_t/k_fold
-
-def monte_carlo_validation(n, k, X, y):
-    precision_t = 0
-    recall_t = 0
-    f1_t = 0
-    support_t = 0
-
-    for _ in range(n):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-        classify = build_classifier(k, X_train, y_train)
-        precision, recall, f1, support = validate(classify, X_test, y_test)
-
-        precision_t += precision
-        recall_t += recall
-        f1_t += f1
-        support_t += support
-
-    return precision_t/n, recall_t/n, f1_t/n, support_t/n
-
-
-def test_columns(cols, label_col, k, validator):
-    X = np.array([row.to_numpy() for index, row in df[cols].iterrows()])
-    y = df['disease'].to_numpy() 
-    return validator(10, k, X, y)
-
-
-#%% k nearest neighbors
+#%% k nearest neighbors all column combinations
 
 import time
 
@@ -145,26 +60,53 @@ for i, cols in enumerate(combos):
     print('%50s'%name, "\t%.5ss"%s, '%f'%((len(combos)-i)*s/3600), '%f'%(i/(len(combos))), best_name, best_f1)
 
 
-#%%
+#%% turn results into data frame
 resultdf = pd.DataFrame(results, columns=['columns', 'k', 'precision', 'recall', 'f1', 'support'])
 resultdf['dims'] = resultdf['columns'].str.split('_').apply(lambda x: len(x))
 resultdf.to_csv('data/AllCombinations.csv', index=False)
 
-#%%
+#%% load all combinations results
 resultdf = pd.read_csv('data/AllCombinations.csv')
 
-#%%
+#%% get top performing parameters
 col = 'f1'
 best_accuracy = resultdf.sort_values(col).iloc[-1][col]
 display(resultdf.sort_values(col, ascending=False).head(30))
 display(resultdf[resultdf[col] == best_accuracy])
-#%%
-cols = ['restecg','oldpeak','ca']
+
+#%% precision vs recall
+plt.figure()
+sns.scatterplot(x='precision', y='recall', data=resultdf[resultdf.f1 >= .79])
+plt.title('Precision vs Recall of classifiers with F1 >= .8')
+plt.show()
+
+#%% best performer - k fold validation
 cols = ['cp', 'exang', 'ca', 'thal']
 cols = ['ca', 'cp', 'thal']
-k = 7 # choose odd k so there is never a tie
+k = 11 # choose odd k so there is never a tie
+
 X = np.array([row.to_numpy() for index, row in df[cols].iterrows()])
 y = df['disease'].to_numpy() 
 
-precision, recall, f1, support = test_columns(cols, 'disease', k, k_fold_validaiton)
-print(precision, recall, f1, support)
+precision, recall, f1, support = test_columns(df, cols, 'disease', k, k_fold_validaiton)
+
+print('precision  recall    f1        support')
+print('%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
+
+#%% Best performer - validation set
+cols = ['cp', 'exang', 'ca', 'thal']
+cols = ['ca', 'cp', 'thal']
+k = 11 # choose odd k so there is never a tie
+
+X_train  = np.array([row.to_numpy() for index, row in df[cols].iterrows()])
+y_train = df['disease'].to_numpy() 
+
+X_validate = np.array([row.to_numpy() for index, row in df_val[cols].iterrows()])
+y_validate = df_val['disease'].to_numpy()
+
+classify = build_classifier(k, X_train, y_train)
+precision, recall, f1, support = validate(classify, X_validate, y_validate)
+
+print('precision  recall    f1        support')
+print('%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
+ 
