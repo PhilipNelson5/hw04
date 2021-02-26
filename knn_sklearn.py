@@ -83,6 +83,6 @@ def monte_carlo_validation(n, k, X, y, labels=[1]):
 
 def test_columns(df, cols, label_col, k, validator, labels=[1]):
     X = np.array([row.to_numpy() for index, row in df[cols].iterrows()])
-    y = df['disease'].to_numpy() 
+    y = df[label_col].to_numpy() 
     return validator(10, k, X, y, labels=labels)
 
