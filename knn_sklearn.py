@@ -16,7 +16,7 @@ def validate(classify, X_test, y_test, labels=[1]):
     """
     y_predictions = classify(X_test)
     p, r, f1, s = precision_recall_fscore_support(y_test, y_predictions, labels=labels)
-    return p[0], r[0], f1[0], s[0]
+    return p, r, f1, s
 
 def build_classifier(k, X_train, y_train):
     """build a k nearest neighbors classifier
