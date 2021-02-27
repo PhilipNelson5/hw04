@@ -67,36 +67,60 @@ resultdf.to_csv('data/AllCombinations.csv', index=False)
 
 #%% load all combinations results
 resultdf = pd.read_csv('data/AllCombinations.csv')
+print(len(resultdf))
 
 #%% get top performing parameters
 col = 'f1'
 best_accuracy = resultdf.sort_values(col).iloc[-1][col]
-display(resultdf.sort_values(col, ascending=False).head(30))
+display(resultdf.sort_values(col, ascending=False).head(10))
 display(resultdf[resultdf[col] == best_accuracy])
 
 #%% precision vs recall
 plt.figure()
-sns.scatterplot(x='precision', y='recall', data=resultdf[resultdf.f1 >= .79])
+sns.scatterplot(x='precision', y='recall', data=resultdf[resultdf.f1 >= .8])
 plt.title('Precision vs Recall of classifiers with F1 >= .8')
+plt.tight_layout()
 plt.show()
 
+#%%
+plt.figure()
+sns.scatterplot(x='precision', y='recall', data=resultdf)
+plt.title('Precision vs Recall')
+plt.tight_layout()
+plt.savefig('images/precision_vs_recall.pdf')
+plt.show()
+
+#%%
+top_f1 = resultdf.sort_values(col).iloc[-1][col]
+n=10
+for i in np.linspace(0, top_f1, n, endpoint=True):
+    sns.scatterplot(
+        x='precision',
+        y='recall',
+        data=resultdf[(resultdf.f1>=i) & (resultdf.f1<i+step)],
+        label='{s:.2f}'.format(s=i))
+plt.legend(bbox_to_anchor=(0, 1), loc='upper left', ncol=1)
+plt.title('Precision vs Recall')
+plt.tight_layout()
+plt.savefig('images/precision_vs_recall_colored.pdf')
+plt.show()
+
+
 #%% best performer - k fold validation
-cols = ['cp', 'exang', 'ca', 'thal']
-cols = ['ca', 'cp', 'thal']
-k = 11 # choose odd k so there is never a tie
+cols, k = (['cp','fbs','exang','ca','thal'], 13)
+cols, k = (['ca', 'cp', 'thal'], 11)
 
 X = np.array([row.to_numpy() for index, row in df[cols].iterrows()])
 y = df['disease'].to_numpy() 
 
+print('precision  recall    f1        support')
 precision, recall, f1, support = test_columns(df, cols, 'disease', k, k_fold_validation)
 
-print('precision  recall    f1        support')
 print('%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
 
 #%% Best performer - validation set
-cols = ['cp', 'exang', 'ca', 'thal']
-cols = ['ca', 'cp', 'thal']
-k = 11 # choose odd k so there is never a tie
+cols, k = (['cp','fbs','exang','ca','thal'], 13)
+cols, k = (['ca', 'cp', 'thal'], 11)
 
 X_train  = np.array([row.to_numpy() for index, row in df[cols].iterrows()])
 y_train = df['disease'].to_numpy() 
@@ -109,4 +133,3 @@ precision, recall, f1, support = validate(classify, X_validate, y_validate)
 
 print('precision  recall    f1        support')
 print('%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
- 
