@@ -26,21 +26,42 @@ p, r, f1, s = precision_recall_fscore_support(y_test, y_predictions, labels=labe
 display(p, r, f1, s)
 
 #%%
+k=5
 precision, recall, f1, support = k_fold_validation(10, k, X, y, labels=labels)
 display(k, precision, recall, f1, support)
 
 #%%
-k = 11 # choose odd k so there is never a tie
-
 print('k  precision  recall    f1        support')
 results = []
 for k in range(1, 100, 2):
   precision, recall, f1, support = k_fold_validation(10, k, X, y, labels=labels)
   results.append((k, precision, recall, f1, support))
-  print(k, '%5f'%precision, '  %5f'%recall, ' %5f'%f1, ' %5f'%support)
+  print(k, '%5f'%precision[0], '  %5f'%recall[0], ' %5f'%f1[0], ' %5f'%support[0])
 
-df = pd.DataFrame(results, columns=['k', 'precision', 'recall', 'f1', 'support'])
-df.to_csv('data/MnistResults.csv', index=False)
+#%%
+# df = pd.DataFrame(results, columns=['k', 'precision', 'recall', 'f1', 'support'])
+# df.to_csv('data/MnistResults2.csv', index=False)
+
+#%%
+df = pd.read_csv('data/MnistResults2.csv')
+display(f1)
+
+#%%
+new=[]
+for k, f1 in df[['k', 'f1']].iterrows():
+  new.append((f1[0], *f1[1]))
+f1 = pd.DataFrame(new, columns=['k', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
+
+
+#%%
+for i in range(10):
+  sns.lineplot(x='k', y=str(i), data=f1, label=str(i))
+plt.title('F1 Score vs k Value')
+plt.ylabel('f1')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.savefig('images/f1_vs_k_mnist.pdf')
+plt.show()
 
 #%%
 df = pd.read_csv('data/MnistResults.csv')
