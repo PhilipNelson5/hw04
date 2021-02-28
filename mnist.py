@@ -1,5 +1,6 @@
 #%% imports
 from knn_sklearn import *
+from confusion_matrix_pretty_print import plot_confusion_matrix_from_data
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ from scipy import stats
 from functools import partial
 from itertools import combinations
 from sklearn.datasets import fetch_openml
+from sklearn.metrics import confusion_matrix
 
 #%% load data
 mnist = fetch_openml('mnist_784', as_frame=False, cache=True)
@@ -29,6 +31,15 @@ display(p, r, f1, s)
 k=5
 precision, recall, f1, support = k_fold_validation(10, k, X, y, labels=labels)
 display(k, precision, recall, f1, support)
+
+#%%
+k=5
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+classify = build_classifier(k, X_train, y_train)
+y_pred = classify(X_test)
+cm = confusion_matrix(y_test, y_pred, labels=labels)
+display(cm)
+plot_confusion_matrix_from_data(y_test, y_pred, labels, path='images/confusion_matrix.pdf')
 
 #%%
 print('k  precision  recall    f1        support')
